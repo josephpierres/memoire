@@ -1,63 +1,45 @@
+from flask import Flask, render_template, request, redirect, url_for
 import requests
-import time
-import threading
 
-# URL du backend
+app = Flask(__name__)
+
+# URL du backend Flask
 BACKEND_URL = "http://localhost:5000"
 
-# Données de la réservation
-reservation_data = {
-    "eventId": "concert-123",
-    "userId": "user-456"
-}
+# Route pour la page d'accueil
+@app.route('/')
+def home():
+    return render_template('index.html')
 
-# Fonction pour envoyer une requête POST (réserver un livre)
-def reserve_book():
-    while True:
-        try:
-            response = requests.post(f"{BACKEND_URL}/reserveBook", json=reservation_data)
-            if response.status_code == 200:
-                print("Reservation successful:", response.json())
-            else:
-                print("Error:", response.text)
-        except Exception as e:
-            print("Failed to send POST request:", e)
-        
-        # Attendre 5 secondes avant la prochaine requête
-        time.sleep(5)
+# Route pour réserver un book
+@app.route('/reserve', methods=['POST'])
+def reserve():
+    event_id = request.form.get("eventId")
+    user_id = request.form.get("userId")
+    
+    if not event_id or not user_id:
+        return "eventId and userId are required", 400
+    
+    # Envoyer la requête de réservation au backend
+    response = requests.post(f"{BACKEND_URL}/reserveBook", json={"eventId": event_id, "userId": user_id})
+    
+    if response.status_code == 200:
+        return redirect(url_for('home'))  # Rediriger vers la page d'accueil après une réservation réussie
+    else:
+        return f"Failed to reserve book: {response.json().get('error', 'Unknown error')}", 400
 
-# Fonction pour envoyer une requête GET (récupérer la liste des livres)
-def get_books():
-    while True:
-        try:
-            response = requests.get(f"{BACKEND_URL}/getBooks")
-            if response.status_code == 200:
-                print("Books:", response.json())
-            else:
-                print("Error:", response.text)
-        except Exception as e:
-            print("Failed to send GET request:", e)
-        
-        # Attendre 20 secondes avant la prochaine requête
-        time.sleep(20)
+# Route pour afficher la liste des books
+@app.route('/books')
+def books():
+    # Récupérer la liste des books depuis le backend
+    response = requests.get(f"{BACKEND_URL}/getBooks")
+    
+    if response.status_code == 200:
+        books = response.json()
+        return render_template('books.html', books=books)
+    else:
+        return f"Failed to retrieve books: {response.json().get('error', 'Unknown error')}", 400
 
-# Démarrer les threads pour les requêtes POST et GET
+# Démarrer le serveur Flask
 if __name__ == "__main__":
-    # Thread pour les requêtes POST (réservation de livres)
-    post_thread = threading.Thread(target=reserve_book)
-    post_thread.daemon = True  # Le thread s'arrête lorsque le programme principal se termine
-
-    # Thread pour les requêtes GET (récupération des livre)
-    get_thread = threading.Thread(target=get_books)
-    get_thread.daemon = True  # Le thread s'arrête lorsque le programme principal se termine
-
-    # Démarrer les threads
-    post_thread.start()
-    get_thread.start()
-
-    # Maintenir le programme en cours d'exécution
-    try:
-        while True:
-            time.sleep(1)  # Maintenir le programme actif
-    except KeyboardInterrupt:
-        print("Program stopped.")
+    app.run(host="0.0.0.0", port=5001)

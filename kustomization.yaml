@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: bbl
+
+secretGenerator:
+- name: mysql-root-password
+  literals:
+  - password=password
+
+# helmCharts:
+# - name: mergestat
+#   repo: https://helm.mergestat.com/
+#   releaseName: mergestat
+#   namespace: admin
+#   version: 0.1.0
+#   valuesFile: values.yaml
+
+resources:
+- namespace-bbl.yaml
+- sc-mysql.yaml
+- pv-mysql.yaml
+- sc-app.yaml
+- pv-app.yaml
+
+# - EFK/elasticsearch_statefulset.yaml
+# - EFK/kibana.yaml
+# - EFK/fluentbit.yaml

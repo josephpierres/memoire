@@ -1,0 +1,84 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: biblio-app  
+  namespace: bbl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: biblio-app
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: biblio-app        
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: biblio-app       
+        image: pjoseph5011/biblio_app:latest
+        imagePullPolicy: Always #IfNotPresent
+        volumeMounts:
+        - name: app-config
+          mountPath: /app.ini
+        # - name: www-storage
+        #   mountPath: /app
+        command: ["uwsgi", "--ini", "app.ini", "--uid", "www-data"]        
+        ports:
+        - containerPort: 8081
+          name: metrics
+        - containerPort: 8083
+          name: http
+        env:
+        - name: FLASK_ENV
+          value: "production"
+        - name: APP_NAME
+          value: "Biblio-app"
+        - name: REDIS_URL
+          value: "redis://redis:6379/0" 
+        - name: Biblio_api_URL
+          value: "http://biblio-api:8084"       
+      volumes:
+      # - name: www-storage
+      #   persistentVolumeClaim:
+      #     claimName: app-pvc
+      - name: app-config
+        configMap:
+          name: biblio-app-config
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: biblio-app-config
+data:
+  app.ini: |
+    [uwsgi]
+    wsgi-file = run.py
+    callable = app
+    module = biblio
+    plugin = python
+    master = false  # true
+    # maximum number of worker processes
+    processes = 1 # 4    
+    cheaper = 0
+    lazy-apps = true
+    threads = 2
+    stats = 127.0.0.1:9191
+    stats-http = true
+    vaccum = true
+    # the socket (use the full path to be safe
+    socket = :8081
+    http = :8083
+    # ... with appropriate permissions - may be needed
+    chmod-socket    = 664
+    # clear environment on exit
+    vacuum          = true
+
+    # DO NOT USE IN PRODUCTION
+    py-autoreload   = 2
+    master = true
+    die-on-term = true

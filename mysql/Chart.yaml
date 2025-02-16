@@ -1,0 +1,8 @@
+name: mysql
+apiVersion: v1
+sources:
+- https://github.com/josephpierres/MGL7760-H2024-Projet1-Groupe-1
+version: 1.0.0
+maintainers:
+- name: groupe1
+  email: pierre@gmail.com

@@ -1,0 +1,46 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: nginx-config
+  namespace: bbl
+data:
+  default.conf: |
+        error_log  /var/log/nginx/error.log;
+        access_log  /var/log/nginx/access.log;
+        # pid        /var/run/nginx.pid;
+        # load_module /opt/opentelemetry-webserver-sdk/WebServerModule/Nginx/ngx_http_opentelemetry_module.so;
+        #  include /etc/nginx/conf.d/opentelemetry_module.conf;
+        
+            upstream wsgi_servers {
+                server biblio-app:8081;      
+            }
+            upstream alertmanager {
+            server 127.0.0.1:9093;
+            }
+
+            server {
+                listen 80;
+
+                location / {
+                    include uwsgi_params;
+                    uwsgi_pass wsgi_servers;
+                
+                }
+                location /stub_status {
+                    stub_status on;
+                    access_log on;
+                    allow all;
+                    deny all;
+
+                }
+                
+                location /alertmanager {
+                    
+                    proxy_redirect          off;            
+                    proxy_set_header        Host            $host;
+                    proxy_set_header        X-Real-IP       $remote_addr;
+                    proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+                    proxy_pass http://alertmanager$request_uri;
+                }
+   
+            }

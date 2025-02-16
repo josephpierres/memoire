@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jolie-proxy
+  namespace: bbl
+  labels:
+    app: jolie-proxy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jolie-proxy
+  template:
+    metadata:
+      labels:
+        app: jolie-proxy
+    spec:
+      imagePullSecrets:
+      - name: regcred
+      containers:
+      - name: jolie-proxy
+        image: pjoseph5011/jolie-proxy:latest
+        imagePullPolicy: Always
+        ports:
+        - name: http
+          containerPort: 8090
+        - name: metrics
+          containerPort: 9091
+        env:
+        - name: MYSQL_HOST
+          value: "mysql-service"
+        - name: REDIS_HOST
+          value: "redis"
+        volumeMounts:
+        - name: jolie-config
+          mountPath: /opt/jolie/config
+      volumes:
+      - name: jolie-config
+        configMap:
+          name: jolie-proxy-config

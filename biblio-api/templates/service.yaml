@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: biblio-api
+  namespace: bbl
+spec:
+  selector:
+    app: biblio-api
+  ports:
+  - port: 8084
+    protocol: TCP
+    name: metrics
+    targetPort: 8084
+  # type: NodePort
+  clusterIP: None

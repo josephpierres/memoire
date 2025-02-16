@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pvc
+  namespace: bbl
+  labels:
+    app: flaskapp
+spec:
+  storageClassName: app-sc
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 25Mi

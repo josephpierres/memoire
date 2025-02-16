@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: biblio-api
+  namespace: bbl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: biblio-api
+  template:
+    metadata:
+      labels:
+        app: biblio-api
+    spec:
+      imagePullSecrets:
+        - name: regcred
+      containers:
+      - name: biblio-api
+        image: pjoseph5011/biblio_api:latest      
+        imagePullPolicy: Always    #IfNotPresent
+        env:
+        - name: MYSQL_PORT
+          value: "3306"
+        - name: OTEL_PYTHON_LOG_CORRELATION
+          value: "true"
+        volumeMounts:
+        - name: prometheus-dir
+          mountPath: /tmp
+        ports:
+        - containerPort: 8084
+          name: metrics
+        command: ['python3', 'app.py']
+      volumes:
+      - name: prometheus-dir
+        emptyDir: {}
+       

@@ -11,10 +11,9 @@ ADD ./requirements.txt /app
 RUN apt-get update
 RUN pip install --upgrade pip
 # installer les dependances à Python
-RUN pip install --no-cache-dir -r requirements.txt && \
-opentelemetry-bootstrap -a install
-# RUN opentelemetry-bootstrap -a install
+RUN pip install --no-cache-dir -r requirements.txt 
 COPY . .
-EXPOSE 8081
+EXPOSE 5000
+EXPOSE 5002
 # CMD [ "python3", "-m" , "flask", "run", "--host=localhost"]
 CMD ["uwsgi", "--ini", "app.ini" ,"--uid", "www-data"] 

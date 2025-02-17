@@ -2,27 +2,21 @@ include "console.iol"
 include "http.iol"
 include "json.iol"
 
-// Définition des interfaces
-interface PythonInterface {
+interface ProxyInterface {
     RequestResponse:
         reserveBook(BookRequest)(BookResponse),
-        getBooks(void)(BookListResponse)
+        getBooks(void)(BookListResponse),
+        getMetrics(void)(MetricsResponse)
 }
 
-interface MySQLInterface {
+interface DatabaseInterface {
     RequestResponse:
         executeQuery(DatabaseRequest)(DatabaseResponse)
 }
 
-interface RedisInterface {
+interface AlertInterface {
     RequestResponse:
-        reserveBook(BookRequest)(BookResponse),
-        getBooks(void)(BookListResponse)
-}
-
-interface PrometheusInterface {
-    RequestResponse:
-        fetchMetrics(QueryRequest)(MetricsResponse)
+        alert(AlertRequest)(void)
 }
 
 // Définition des types
@@ -32,18 +26,18 @@ type BookRequest {
 }
 
 type BookResponse {
-    BookId: string
+    bookId: string
     status: string
     error?: string
 }
 
 type BookListResponse {
-    Books: any
+    books: list<string>
 }
 
 type DatabaseRequest {
     query: string
-    params?: any
+    params?: list<string>
 }
 
 type DatabaseResponse {
@@ -52,10 +46,17 @@ type DatabaseResponse {
     status: string
 }
 
-type QueryRequest {
-    query: string
+type AlertRequest {
+    status: string
+    labels: {
+        alertname: string
+    }
+    annotations: {
+        summary: string
+        description: string
+    }
 }
 
 type MetricsResponse {
-    data: any
+    metrics: string
 }

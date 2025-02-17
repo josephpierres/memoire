@@ -1,107 +1,137 @@
 include "console.iol"
 include "http.iol"
 include "json.iol"
-include "time.iol"
-include "jolie-proxy-interface.iol"
-include "jolie-proxy-port.iol"
+include "interface.iol"
 
-// Variables globales
+// Variable globale pour l'état de MySQL
 global {
     bool mysqlAvailable = true
 }
 
-
-// Définition des interfaces
-
-
-
-// Fonction pour vérifier l'état de MySQL via Prometheus
-define checkMySQLStatus {
-    scope(prometheusCheck) {
-        install(Error => {
-            println@Console("Error checking MySQL status: " + Error)()
-            global.mysqlAvailable = false
-        })
-
-        queryRequest.query = "up{service=\"mysql\"}"
-        fetchMetrics@PrometheusAPI(queryRequest)(metricsResponse)
-
-        if (#metricsResponse.data.result > 0 && metricsResponse.data.result[0].value[1] == "1") {
-            global.mysqlAvailable = true
-            println@Console("MySQL is available.")()
-        } else {
-            global.mysqlAvailable = false
-            println@Console("MySQL is unavailable. Redirecting to Redis.")()
-        }
+// Génération des métriques Prometheus
+define generateMetrics()(response) {
+    if (global.mysqlAvailable) {
+        response.metrics = "redis_status 1\n"
+    } else {
+        response.metrics = "redis_status 2\n"
     }
 }
 
-// Fonction pour réserver un livre dans MySQL
-define reserveBookInMySQL(request)(response) {
-    query = "INSERT INTO Books (ISBN, user_id) VALUES (?, ?)"
-    params = [request.eventId, request.userId]
-    databaseRequest.query = query
-    databaseRequest.params = params
-    executeQuery@MySQLPort(databaseRequest)(databaseResponse)
-    response << databaseResponse
-}
-
-// Fonction pour récupérer les livres depuis MySQL
-define getBooksFromMySQL()(response) {
-    query = "SELECT * FROM Books"
-    databaseRequest.query = query
-    executeQuery@MySQLPort(databaseRequest)(databaseResponse)
-    response << databaseResponse
-}
-
-// Fonction principale pour gérer les réservations
+// Gérer les réservations en fonction de l'état de MySQL
 define handleReservation(request)(response) {
     if (global.mysqlAvailable) {
-        // Utiliser MySQL
-        reserveBookInMySQL(request)(response)
+        databaseRequest.query = "INSERT INTO Books (ISBN, user_id) VALUES (?, ?)"
+        databaseRequest.params = [request.eventId, request.userId]
+        executeQuery@MySQLPort(databaseRequest)(databaseResponse)
     } else {
-        // Utiliser Redis
-        reserveBook@RedisPort(request)(response)
+        reserveBook@RedisPort(request)(databaseResponse)
     }
+    response << databaseResponse
 }
 
-// Surveillance continue de MySQL
-define monitorMySQL {
-    while (true) {
-        checkMySQLStatus()
-        sleep@Time(10000)()  // Vérifier toutes les 10 secondes
+// Récupérer la liste des livres depuis MySQL ou Redis
+define getBooksFromDatabase()(response) {
+    if (global.mysqlAvailable) {
+        databaseRequest.query = "SELECT * FROM Books"
+        executeQuery@MySQLPort(databaseRequest)(databaseResponse)
+    } else {
+        getBooks@RedisPort()(databaseResponse)
     }
+    response << databaseResponse
 }
 
-// Logique principale
-main {
-    // Démarrer la surveillance de MySQL dans un thread séparé
-    spawn monitorMySQL()
+// Service JolieProxy
+service JolieProxy {
+    execution { concurrent }
 
-    // Traitement des requêtes
-    [ reserveBook(request)(response) {
-        scope(requestHandling) {
-            install(Error => {
-                response.error = "Request handling error: " + Error
-                response.status = "ERROR"
-            })
-
-            handleReservation(request)(response)
+    // Réception des alertes Prometheus via Alertmanager
+    inputPort AlertPort {
+        location: "http://0.0.0.0:9092"
+        protocol: http {
+            format = "json"
         }
-    } ]
+        Interfaces: AlertInterface
+    }
 
-    [ getBooks()(response) {
-        scope(requestHandling) {
-            install(Error => {
-                response.error = "Request handling error: " + Error
-                response.status = "ERROR"
-            })
+    // Proxy API pour Biblio-API
+    inputPort ProxyPort {
+        location: "socket://0.0.0.0:9091"
+        protocol: http {
+            format = "json"
+        }
+        Interfaces: ProxyInterface
+    }
 
-            if (global.mysqlAvailable) {
-                getBooksFromMySQL()(response)
-            } else {
-                getBooks@RedisPort()(response)
+    // Exposition des métriques pour Prometheus
+    inputPort MetricsPort {
+        location: "http://0.0.0.0:9100/metrics"
+        protocol: http {
+            format = "plain"
+        }
+        Interfaces: ProxyInterface
+    }
+
+    // Connexion MySQL
+    outputPort MySQLPort {
+        location: "socket://mysql:3306"
+        protocol: http {
+            format = "json"
+        }
+        Interfaces: DatabaseInterface
+    }
+
+    // Connexion Redis
+    outputPort RedisPort {
+        location: "socket://redis:6379"
+        protocol: http {
+            format = "json"
+        }
+        Interfaces: ProxyInterface
+    }
+
+    // Logique principale
+    main {
+        // Réception d'une alerte depuis Alertmanager
+        [ alert(request) {
+            println@Console("🔔 Alerte reçue : " + request.annotations.summary)
+
+            if (request.status == "firing") {
+                if (request.labels.alertname == "MySQL_Down") {
+                    global.mysqlAvailable = false
+                    println@Console("🔴 MySQL est hors service. Redirection vers Redis.")()
+                }
+                if (request.labels.alertname == "MySQL_Up") {
+                    global.mysqlAvailable = true
+                    println@Console("✅ MySQL est de retour en ligne. Reconnexion.")()
+                }
             }
-        }
-    } ]
+        }]
+
+        // Réservation d'un livre
+        [ reserveBook(request)(response) {
+            scope(requestHandling) {
+                install(Error => {
+                    response.error = "Erreur traitement : " + Error
+                    response.status = "ERROR"
+                })
+                handleReservation(request)(response)
+            }
+        }]
+
+        // Récupération des livres
+        [ getBooks()(response) {
+            scope(requestHandling) {
+                install(Error => {
+                    response.error = "Erreur traitement : " + Error
+                    response.status = "ERROR"
+                })
+                getBooksFromDatabase()(response)
+            }
+        }]
+
+        // Fournir les métriques à Prometheus
+        [ getMetrics()(response) {
+            generateMetrics()(response)
+        }]
+    }
 }

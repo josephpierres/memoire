@@ -1,0 +1,25 @@
+# 2. Configuration KEDA pour le backend
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: backend-scaler
+  namespace: bbl
+spec:
+  scaleTargetRef:
+    name: biblio-api
+    kind: Deployment
+    apiVersion: apps/v1
+  triggers:
+  - type: prometheus
+    metricType: Value
+    metadata:
+      serverAddress: http://bibliobservability-kube-pr-prometheus.monitoring.svc.cluster.local:9090
+      metricName: biblio_api_requests_total
+      threshold: '7'
+      query: |
+        max(irate(biblio_api_responses_total{service="biblio-api"}[5m]))
+      ignoreNullValues: 'false'
+  minReplicaCount: 1
+  maxReplicaCount: 3
+  pollingInterval: 5
+  cooldownPeriod: 30

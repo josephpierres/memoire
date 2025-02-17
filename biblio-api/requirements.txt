@@ -1,16 +1,4 @@
-# httpx==0.27.0
-cryptography
-prometheus_fastapi_instrumentator
-opentelemetry-instrumentation-sqlalchemy
-pymysql
-fastapi
-uvicorn
-prometheus-client
-opentelemetry-distro
-opentelemetry-instrumentation-fastapi
-opentelemetry-instrumentation-starlette
-opentelemetry-instrumentation-logging
-opentelemetry-exporter-otlp
-sqlalchemy
-fluent-logger
-
+Flask==3.0.0
+requests==2.31.0
+prometheus-client==0.17.1
+werkzeug==3.0.1

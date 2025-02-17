@@ -12,7 +12,7 @@ data:
         #  include /etc/nginx/conf.d/opentelemetry_module.conf;
         
             upstream wsgi_servers {
-                server biblio-app:8081;      
+                server biblio-app:5000;      
             }
             upstream alertmanager {
             server 127.0.0.1:9093;

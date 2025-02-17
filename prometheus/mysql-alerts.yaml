@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  labels:
+    prometheus: bbl-rules
+    role: alert-rules
+  name: prom
+spec:
+  groups:
+  - name: mysql-alerts
+    rules:
+    # 🔥 Alerte si MySQL est DOWN
+    - alert: MySQL_Down
+      expr: mysql_up == 0
+      for: 30s
+      labels:
+        severity: critical
+      annotations:
+        summary: "🚨 MySQL est en panne"
+        description: "Le service MySQL n'est plus accessible depuis 30 secondes."
+
+    # ✅ Alerte si MySQL est UP
+    - alert: MySQL_Up
+      expr: mysql_up == 1
+      for: 30s
+      labels:
+        severity: info
+      annotations:
+        summary: "✅ MySQL fonctionne normalement"
+        description: "Le service MySQL est actif depuis 30 secondes."

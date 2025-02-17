@@ -13,19 +13,14 @@ helm repo add prometheus-community https://prometheus-community.github.io/helm-c
 helm repo update
 
 helm install bibliobservability prometheus-community/kube-prometheus-stack --namespace monitoring 
-kubectl create -f bibliobservability/servicemonitor.yaml -n monitoring
 
 helm upgrade --install bibliobservability prometheus-community/kube-prometheus-stack \
-  --namespace monitoring --values bibliobservability/prom-values.yaml 
+  --namespace monitoring --values prometheus/prom-values.yaml 
 
 helm repo add kedacore https://kedacore.github.io/charts
 
 
 kubectl create namespace keda
 helm install keda kedacore/keda --namespace keda --version 2.14.0
-
-kubectl apply -f bibliobservability/rules/app-alerts.yaml -n monitoring
-
-kubectl create -f bibliobservability/servicemonitor.yaml -n monitoring
-
+kubectl apply -f prometheus/mysql-alerts.yaml -n monitoring
 kubectl apply -f autoscaling/keda/biblio-api-so.yaml

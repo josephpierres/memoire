@@ -1,6 +1,6 @@
 FROM python:latest
 
-ARG APP_NAME=main.py
+ARG APP_NAME=backend.py
 
 WORKDIR /app
 
@@ -11,6 +11,6 @@ RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt 
 COPY . .
 
-EXPOSE 9091
+EXPOSE 5001
 
 CMD python ${APP_NAME}

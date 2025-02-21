@@ -1,60 +1,37 @@
-include "console.iol"
-include "http.iol"
-include "json.iol"
-
+// ✅ Interface pour la gestion des réservations et des livres
 interface ProxyInterface {
     RequestResponse:
         reserveBook(BookRequest)(BookResponse),
         getBooks(void)(BookListResponse),
-        getMetrics(void)(MetricsResponse)
+        metrics(void)(MetricsResponse)
 }
 
-interface DatabaseInterface {
-    RequestResponse:
-        executeQuery(DatabaseRequest)(DatabaseResponse)
-}
-
+// ✅ Interface pour la gestion des alertes
 interface AlertInterface {
     RequestResponse:
         alert(AlertRequest)(void)
 }
 
-// Définition des types
+// 📌 Définition des types de données
 type BookRequest {
     eventId: string
     userId: string
 }
 
 type BookResponse {
-    bookId: string
+    bookId?: string
     status: string
     error?: string
 }
 
 type BookListResponse {
-    books: list<string>
-}
-
-type DatabaseRequest {
-    query: string
-    params?: list<string>
-}
-
-type DatabaseResponse {
-    result?: any
-    error?: string
-    status: string
+    books: undefined
 }
 
 type AlertRequest {
     status: string
-    labels: {
-        alertname: string
-    }
-    annotations: {
-        summary: string
-        description: string
-    }
+    labels: undefined
+    annotations: undefined
 }
 
 type MetricsResponse {

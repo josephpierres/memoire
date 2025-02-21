@@ -1,0 +1,177 @@
+services:
+
+  app:
+    build: ./biblio-app
+    container_name: app
+    ports:
+      - "5002:5002"
+    depends_on:
+      - jolie-proxy
+    restart: always
+    networks:
+      - monitoring
+  
+  api:
+    build: ./biblio-api
+    container_name: api
+    ports:
+      - "5001:5001"
+    depends_on:
+      - jolie-proxy    
+    restart: always
+    networks:
+      - monitoring
+
+  jolie-proxy:
+    # image: jolie-lang/jolie:1.9.0
+    container_name: jolie-proxy
+    build:
+      context: ./jolie-proxy
+      dockerfile: Dockerfile
+    command: jolie jolie-proxy.ol
+    depends_on:
+      - prometheus
+      - mysql
+      
+    environment:
+      - DATABASE_URL=mysql://root:password@mysql:3306/gestion_bibliotheque
+      
+    ports:
+      - "9091:9091"
+      - "9191:9191"
+      - "9092:9092"
+    restart: always
+    networks:
+      - monitoring
+
+  # Serveur de base de données MySQL
+  mysql:
+    image: mysql:8.0.22   
+    container_name: mysql
+    command: 
+    - --default-authentication-plugin=mysql_native_password    
+    # - --character-set-server=utf8mb4  
+    # - --collation-server=utf8mb4_unicode_ci
+    
+    restart: always   
+    ports:
+      - '3306:3306'
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: gestion_bibliotheque
+      MYSQL_USER: myuser
+      MYSQL_PASSWORD: mypassword     
+    
+    volumes:
+      - ./mysql/db.sql:/docker-entrypoint-initdb.d/db.sql
+      - ./mysql/log:/var/log/mysql
+      - ./mysql/app:/app
+      - ./mysql/data:/var/lib/mysql
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u root --password=$$MYSQL_ROOT_PASSWORD
+      start_period: 5s
+      interval: 5s
+      timeout: 20s
+      retries: 10
+    networks:
+      - monitoring
+
+  
+    # Prometheus pour les metriques et connexion avec Grafana
+  prometheus:
+    container_name: prometheus
+    image: prom/prometheus:v2.17.1
+    user: root
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/configs/:/etc/prometheus/          
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'      
+    depends_on:
+      - alertmanager
+    networks:
+      - monitoring    
+
+
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    ports:
+      - 9100:9100 
+  
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: alertmanager
+    restart: unless-stopped
+    ports:
+        - "9093:9093"
+    volumes:
+    - ./alertmanager/config.yml:/etc/alertmanager/config.yml
+    
+    command: 
+    - "--config.file=/etc/alertmanager/config.yml"
+    - '--log.level=debug'
+    deploy:
+      mode: global
+    networks:
+      - monitoring
+
+  mysql-exporter:
+    image: prom/mysqld-exporter
+    container_name: mysql-exporter
+    command:
+    - "--mysqld.username=root:password"
+    - "--mysqld.address=mysql:3306"
+    ports:
+      - "9104:9104"
+    environment:
+      - DATA_SOURCE_NAME=root:password@(mysql:3306)/
+    depends_on:
+      - mysql
+    restart: always
+    networks:
+      - monitoring
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_USERS_ALLOW_SIGN_UP=true
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: always
+    networks:
+      - monitoring
+
+  keda:
+    image: kedacore/keda:latest
+    container_name: keda
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - monitoring
+
+networks:
+  monitoring:
+    driver: bridge
+
+volumes:
+  grafana_data:
+  mysql_data:

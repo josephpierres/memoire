@@ -15,5 +15,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 EXPOSE 5000
 EXPOSE 5002
-# CMD [ "python3", "-m" , "flask", "run", "--host=localhost"]
-CMD ["uwsgi", "--ini", "app.ini" ,"--uid", "www-data"] 
+CMD [ "python3", "frontend.py" ]
+# CMD ["uwsgi", "--ini", "app.ini" ,"--uid", "www-data"] 

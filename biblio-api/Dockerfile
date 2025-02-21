@@ -1,6 +1,7 @@
 FROM python:latest
 
-ARG APP_NAME=backend.py
+# ARG APP_NAME=backend.py
+ARG APP_NAME=biblio-api.py
 
 WORKDIR /app
 
@@ -13,4 +14,7 @@ COPY . .
 
 EXPOSE 5001
 
+# Lancer l'application FastAPI avec Uvicorn
+# CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5001"]
+# ou avec flask
 CMD python ${APP_NAME}

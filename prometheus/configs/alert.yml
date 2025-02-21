@@ -1,0 +1,21 @@
+groups:
+- name: mysql-alerts
+  rules:
+  - alert: MySQL_Down
+    expr: up{job="mysql"} == 0
+    for: 30s
+    labels:
+      severity: "critical"
+      service: "mysql"
+    annotations:
+      summary: "🚨 MySQL est en panne"
+      description: "Le service MySQL n'est plus accessible depuis 30 secondes."
+  - alert: MySQL_Up
+    expr: up{job="mysql"} == 1
+    for: 30s
+    labels:
+      severity: "info"
+      service: "mysql"
+    annotations:
+      summary: "✅ MySQL fonctionne normalement"
+      description: "Le service MySQL est actif depuis 30 secondes."

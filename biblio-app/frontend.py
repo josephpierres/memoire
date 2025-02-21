@@ -8,7 +8,7 @@ from werkzeug.middleware.dispatcher import DispatcherMiddleware
 app = Flask(__name__)
 
 # URL du backend Flask
-BACKEND_URL = "http://biblio-api:5001"
+BACKEND_URL = "http://api:5001"
 
 # Prometheus Metrics
 REQUEST_COUNT = Counter(

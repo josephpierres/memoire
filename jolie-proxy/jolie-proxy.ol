@@ -1,59 +1,78 @@
 include "console.iol"
-include "http.iol"
-include "json.iol"
-include "interface.iol"
+include "time.iol"
+include "database.iol"
+include "jolie-proxy-interface.iol"
 
-// Variable globale pour l'état de MySQL
-global {
-    bool mysqlAvailable = true
-}
-
-// Génération des métriques Prometheus
-define generateMetrics()(response) {
-    if (global.mysqlAvailable) {
-        response.metrics = "redis_status 1\n"
-    } else {
-        response.metrics = "redis_status 2\n"
-    }
-}
-
-// Gérer les réservations en fonction de l'état de MySQL
-define handleReservation(request)(response) {
-    if (global.mysqlAvailable) {
-        databaseRequest.query = "INSERT INTO Books (ISBN, user_id) VALUES (?, ?)"
-        databaseRequest.params = [request.eventId, request.userId]
-        executeQuery@MySQLPort(databaseRequest)(databaseResponse)
-    } else {
-        reserveBook@RedisPort(request)(databaseResponse)
-    }
-    response << databaseResponse
-}
-
-// Récupérer la liste des livres depuis MySQL ou Redis
-define getBooksFromDatabase()(response) {
-    if (global.mysqlAvailable) {
-        databaseRequest.query = "SELECT * FROM Books"
-        executeQuery@MySQLPort(databaseRequest)(databaseResponse)
-    } else {
-        getBooks@RedisPort()(databaseResponse)
-    }
-    response << databaseResponse
-}
-
-// Service JolieProxy
+// 📌 Service JolieProxy
 service JolieProxy {
     execution { concurrent }
+    
+    // 🔗 Connexion MySQL avec gestion des tentatives
+    define initializeMySQLConnection
+    {
+        scope( connection ) {
+            install( ConnectionError =>
+                connectionAttempt++;
+                if ( connectionAttempt > 3 ) {
+                    println@Console("❌ Impossible de se connecter à MySQL après 3 tentatives.")()
+                    throw( ConnectionError )
+                } else {
+                    println@Console("⏳ Tentative " + connectionAttempt + " de connexion à MySQL...")()
+                    sleep@Time( connectionAttempt * 1500 )();
+                    initializeMySQLConnection
 
-    // Réception des alertes Prometheus via Alertmanager
+                }
+            )
+            with( connectionInfo ) {
+                .username = "root";
+                .port = 3306;
+                .password = "password";
+                .host = "mysql";
+                .database = "gestion_bibliotheque"; 
+                .driver = "mysql"
+                .checkConnection = 1;
+                .toLowerCase = true
+            };
+            connect@Database( connectionInfo )();
+            println@Console("✅ Connexion MySQL établie.")()
+            global.mysqlAvailable = true
+            
+        }
+    }
+
+    // 🔗 Connexion HSQLDB Embedded
+    define initializeHSQLDBConnection {
+        scope( hsqldbConnection ) {
+            install( HSQLDBError =>
+                println@Console("❌ Impossible de se connecter à HSQLDB.")();
+                global.hsqldbAvailable = false
+            );
+            
+            with (connectionInfo) {
+                .username = "sa";
+                .password = "";
+                .host = "";
+                .database = "file:bibliodb/bibliodb"; // Pour stockage persistant
+                .driver = "hsqldb_embedded"
+            };
+            connect@Database(connectionInfo)();
+            println@Console("✅ Connexion HSQLDB établie.")();
+            global.hsqldbAvailable = true
+        }
+    }
+
+
+
+    // ✅ Réception des alertes Prometheus via Alertmanager
     inputPort AlertPort {
-        location: "http://0.0.0.0:9092"
+        location: "socket://0.0.0.0:9092"
         protocol: http {
             format = "json"
         }
         Interfaces: AlertInterface
     }
 
-    // Proxy API pour Biblio-API
+    // ✅ Proxy API pour FastAPI
     inputPort ProxyPort {
         location: "socket://0.0.0.0:9091"
         protocol: http {
@@ -62,76 +81,102 @@ service JolieProxy {
         Interfaces: ProxyInterface
     }
 
-    // Exposition des métriques pour Prometheus
+    // ✅ Exposition des métriques pour Prometheus
     inputPort MetricsPort {
-        location: "http://0.0.0.0:9100/metrics"
+        location: "socket://0.0.0.0:9191/metrics"
         protocol: http {
-            format = "plain"
+            format = "raw"
         }
         Interfaces: ProxyInterface
     }
 
-    // Connexion MySQL
-    outputPort MySQLPort {
-        location: "socket://mysql:3306"
-        protocol: http {
-            format = "json"
-        }
-        Interfaces: DatabaseInterface
+    // 🔗 Connexion à MySQL et HSQLDB au démarrage
+    init {
+        // 🔍 Variable globale pour suivre l'état des bases de données
+        global.mysqlAvailable = true
+        global.hsqldbAvailable = true
+
+        initializeMySQLConnection
+;
+        initializeHSQLDBConnection
     }
 
-    // Connexion Redis
-    outputPort RedisPort {
-        location: "socket://redis:6379"
-        protocol: http {
-            format = "json"
-        }
-        Interfaces: ProxyInterface
-    }
-
-    // Logique principale
-    main {
-        // Réception d'une alerte depuis Alertmanager
-        [ alert(request) {
-            println@Console("🔔 Alerte reçue : " + request.annotations.summary)
-
+    // ✅ Logique principale
+    main {       
+        // 🔔 Gestion des alertes de Prometheus
+        [ alert(request)() {
+            println@Console("🔔 Alerte reçue : " + request.annotations.summary)();
             if (request.status == "firing") {
                 if (request.labels.alertname == "MySQL_Down") {
-                    global.mysqlAvailable = false
-                    println@Console("🔴 MySQL est hors service. Redirection vers Redis.")()
+                    global.mysqlAvailable = false;
+                    println@Console("🔴 MySQL est hors service. Basculement sur HSQLDB.")()
                 }
                 if (request.labels.alertname == "MySQL_Up") {
-                    global.mysqlAvailable = true
-                    println@Console("✅ MySQL est de retour en ligne. Reconnexion.")()
+                    global.mysqlAvailable = true;
+                    println@Console("✅ MySQL est de retour en ligne.")()
                 }
             }
-        }]
+        }] { nullProcess }
 
-        // Réservation d'un livre
+        // 📌 Réservation d'un livre
         [ reserveBook(request)(response) {
-            scope(requestHandling) {
-                install(Error => {
-                    response.error = "Erreur traitement : " + Error
-                    response.status = "ERROR"
-                })
-                handleReservation(request)(response)
+            if (global.mysqlAvailable) {
+                scope(sqlTransaction) {
+                    install(SQLException => {
+                        response.status = "ERROR";
+                        response.error = "Erreur SQL: " + SQLException;
+                        println@Console("❌ Erreur lors de l'insertion MySQL: " + SQLException)()
+                    });
+                    updateRequest = "INSERT INTO Reservations (eventId, userId) VALUES (:eventId, :userId)";
+                    updateRequest.eventId = request.eventId;
+                    updateRequest.userId = request.userId;
+                    update@Database(updateRequest)(dbResponse);
+                    response.status = "RESERVED"
+                }
+            } else if (global.hsqldbAvailable) {
+                println@Console("⚠️ MySQL indisponible, basculement sur HSQLDB.")();
+                updateRequest = "INSERT INTO Reservations (eventId, userId) VALUES (:eventId, :userId)";
+                updateRequest.eventId = request.eventId;
+                updateRequest.userId = request.userId;
+                update@Database(updateRequest)(dbResponse);
+                response.status = "RESERVED (HSQLDB)"
+            } else {
+                response.status = "ERROR";
+                response.error = "Aucune base de données disponible (MySQL et HSQLDB hors ligne)"
             }
-        }]
+        }] { nullProcess }
 
-        // Récupération des livres
+        // 📌 Récupération des livres
         [ getBooks()(response) {
-            scope(requestHandling) {
-                install(Error => {
-                    response.error = "Erreur traitement : " + Error
-                    response.status = "ERROR"
-                })
-                getBooksFromDatabase()(response)
+            if (global.mysqlAvailable) {
+                scope(sqlQuery) {
+                    install(SQLException => {
+                        response.status = "ERROR";
+                        response.error = "Erreur SQL: " + SQLException;
+                        println@Console("❌ Erreur lors de la récupération des livres MySQL: " + SQLException)()
+                    });
+                    query@Database("SELECT title FROM books")(sqlResponse);
+                    response.books = sqlResponse.result
+                }
+            } else if (global.hsqldbAvailable) {
+                println@Console("⚠️ MySQL indisponible, basculement sur HSQLDB.")();
+                query@Database("SELECT title FROM books")(sqlResponse);
+                response.books = sqlResponse.result
+            } else {
+                response.status = "ERROR";
+                response.error = "Aucune base de données disponible (MySQL et HSQLDB hors ligne)"
             }
-        }]
+        }] { nullProcess }
 
-        // Fournir les métriques à Prometheus
-        [ getMetrics()(response) {
-            generateMetrics()(response)
-        }]
+        // 📊 Fournir les métriques à Prometheus
+        [ metrics()(response) {
+            println@Console("📊 Envoi des métriques à Prometheus.")();
+            if (global.mysqlAvailable) {
+                response.metrics = "mysql_status 1\n"
+            } else {
+                response.metrics = "mysql_status 0\n"
+            }
+            
+        }] { nullProcess }
     }
 }

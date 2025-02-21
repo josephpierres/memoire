@@ -5,8 +5,9 @@ FROM jolielang/jolie:latest
 WORKDIR /app
 
 # Copier les fichiers nécessaires dans l'image
-COPY main.ol /app/
-COPY proxyInterface.iol /app/
+COPY jolie-proxy-interface.iol /app/
+COPY jolie-proxy.ol /app/
+COPY /lib /app/lib
 # Copier les fichiers nécessaires dans l'image
 
 
@@ -23,9 +24,10 @@ ENV PROMETHEUS_HOST=prometheus.monitoring.svc.cluster.local
 ENV PROMETHEUS_PORT=9090
 
 # Expose le port 8090 pour le service biblio-api
-EXPOSE 8090 
+EXPOSE 9092 
 # Expose le port 9091 pour les metriques
 EXPOSE 9091
+EXPOSE 9191
 
 # Commande pour démarrer le service Jolie
-CMD ["jolie", "main.ol"]
+CMD ["jolie", "jolie-proxy.ol"]

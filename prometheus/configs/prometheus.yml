@@ -1,0 +1,75 @@
+global:
+  scrape_interval: 15s # Intervalle global de collecte des métriques
+  evaluation_interval: 15s # Intervalle d'évaluation des règles
+  external_labels:
+    monitor: 'biblio-monitor' # Étiquette utilisée pour identifier la source des métriques
+
+rule_files:
+- /etc/prometheus/alert.yml # Fichier des règles d'alertes
+
+alerting:
+  alertmanagers:
+  - path_prefix: "/alertmanager/" #- scheme: http
+    static_configs:
+    - targets:
+      - alertmanager:9093 # URL du service Alertmanager
+
+scrape_configs:
+# The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
+- job_name: 'prometheus'
+
+  # Override the global default and scrape targets from this job every 5 seconds.
+  scrape_interval: 5s
+
+  static_configs:
+  # prometheus
+  - targets: [ 'localhost:9090' ]
+
+- job_name: 'mysql'
+  params:
+    auth_module: [ client ]
+
+  scrape_interval: 5s
+
+  static_configs:
+  - targets: [ 'mysql:3306' ]
+
+  relabel_configs:
+  - source_labels: [ __address__ ]
+    target_label: __param_target
+  - source_labels: [ __param_target ]
+    target_label: instance
+  - target_label: __address__
+    # The mysqld_exporter host:port
+    replacement: exporter:9104
+
+#Redis Servers
+- job_name: "redis"
+  static_configs:
+  - targets: [ "localhost:9121" ]
+
+- job_name: 'mysql_exporter'
+  static_configs:
+  - targets: [ 'mysql-exporter:9104' ]
+
+# Scrape config pour biblio_app (Flask)
+- job_name: 'app_http'
+  static_configs:
+  - targets: [ 'app:5002' ]
+
+# Scrape config pour l'application FastAPI
+- job_name: 'api'
+  static_configs:
+  - targets: [ 'api:5001' ]
+  metrics_path: /metrics
+
+# Scrape config pour l'application Flask exposant Prometheus
+- job_name: 'app_socket'
+  static_configs:
+  - targets: [ 'app:5000' ]
+  metrics_path: /metrics
+  # Scrape config pour l'application Flask exposant Prometheus
+- job_name: 'jolie'
+  static_configs:
+  - targets: [ 'jolie-proxy:9191' ]
+  metrics_path: /metrics

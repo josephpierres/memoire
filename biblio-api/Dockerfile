@@ -1,7 +1,7 @@
 FROM python:latest
 
 # ARG APP_NAME=backend.py
-ARG APP_NAME=biblio-api.py
+ARG APP_NAME=main.py
 
 WORKDIR /app
 

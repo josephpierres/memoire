@@ -1,11 +1,9 @@
 global:
 route:
-  group_by: [ 'service' ]
-  # Default receiver
   receiver: "jolie-webhook"
 
 receivers:
 - name: "jolie-webhook"
   webhook_configs:
-  - url: "http://jolie-service:9092/alert"
+  - url: "http://jolie-proxy:9092/alert"
     send_resolved: true

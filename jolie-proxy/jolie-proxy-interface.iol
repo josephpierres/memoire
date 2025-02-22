@@ -2,14 +2,14 @@
 interface ProxyInterface {
     RequestResponse:
         reserveBook(BookRequest)(BookResponse),
-        getBooks(void)(BookListResponse),
+        getBooks(void)(undefined),
         metrics(void)(MetricsResponse)
 }
 
 // ✅ Interface pour la gestion des alertes
 interface AlertInterface {
     RequestResponse:
-        alert(AlertRequest)(void)
+        alert(undefined)(void)
 }
 
 // 📌 Définition des types de données

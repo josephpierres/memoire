@@ -1,7 +1,9 @@
 services:
 
   app:
-    build: ./biblio-app
+    build:
+      context: ./biblio-app
+      dockerfile: Dockerfile
     container_name: app
     ports:
       - "5002:5002"
@@ -12,8 +14,13 @@ services:
       - monitoring
   
   api:
-    build: ./biblio-api
+    build: 
+      context: ./biblio-api
+      dockerfile: Dockerfile  
     container_name: api
+    command:     
+      - 'python3'
+      - 'main.py'
     ports:
       - "5001:5001"
     depends_on:
@@ -75,25 +82,22 @@ services:
       retries: 10
     networks:
       - monitoring
-
-  
     # Prometheus pour les metriques et connexion avec Grafana
   prometheus:
     container_name: prometheus
-    image: prom/prometheus:v2.17.1
+    image: prom/prometheus:v2.45.3
     user: root
     ports:
       - "9090:9090"
     volumes:
       - ./prometheus/configs/:/etc/prometheus/          
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'      
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - --web.enable-remote-write-receiver      
     depends_on:
       - alertmanager
     networks:
       - monitoring    
-
-
 
   node-exporter:
     image: prom/node-exporter:v1.7.0
@@ -155,18 +159,20 @@ services:
       - prometheus
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/etc/grafana/dashboards
     restart: always
     networks:
       - monitoring
 
-  keda:
-    image: kedacore/keda:latest
-    container_name: keda
-    restart: always
-    ports:
-      - "8080:8080"
-    networks:
-      - monitoring
+  # keda:
+  #   image: kedacore/keda:latest
+  #   container_name: keda
+  #   restart: always
+  #   ports:
+  #     - "8080:8080"
+  #   networks:
+  #     - monitoring
 
 networks:
   monitoring:

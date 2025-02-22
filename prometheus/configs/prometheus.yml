@@ -5,12 +5,12 @@ global:
     monitor: 'biblio-monitor' # Étiquette utilisée pour identifier la source des métriques
 
 rule_files:
-- /etc/prometheus/alert.yml # Fichier des règles d'alertes
+- alert.yml # - /etc/prometheus/alert.yml # Fichier des règles d'alertes
 
 alerting:
   alertmanagers:
-  - path_prefix: "/alertmanager/" #- scheme: http
-    static_configs:
+  - static_configs:
+    # - path_prefix: "/alertmanager/" #- scheme: http
     - targets:
       - alertmanager:9093 # URL du service Alertmanager
 
@@ -28,12 +28,9 @@ scrape_configs:
 - job_name: 'mysql'
   params:
     auth_module: [ client ]
-
   scrape_interval: 5s
-
   static_configs:
   - targets: [ 'mysql:3306' ]
-
   relabel_configs:
   - source_labels: [ __address__ ]
     target_label: __param_target
@@ -73,3 +70,4 @@ scrape_configs:
   static_configs:
   - targets: [ 'jolie-proxy:9191' ]
   metrics_path: /metrics
+  scrape_interval: 25s

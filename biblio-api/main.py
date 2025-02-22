@@ -1,9 +1,13 @@
+import re
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 import time
-from prometheus_client import Counter, Histogram, Gauge, Summary, generate_latest, CONTENT_TYPE_LATEST
+from prometheus_client import Counter, Histogram, Gauge, Summary, generate_latest, CONTENT_TYPE_LATEST, make_asgi_app
 from starlette.middleware.base import BaseHTTPMiddleware
+import uvicorn
+from uvicorn.config import LOGGING_CONFIG
+from starlette.routing import Mount
 
 app = FastAPI()
 app.add_middleware(
@@ -49,6 +53,11 @@ class MetricsMiddleware(BaseHTTPMiddleware):
             REQUESTS_IN_PROGRESS.dec()
 
 app.add_middleware(MetricsMiddleware)
+
+route = Mount("/metrics", make_asgi_app())
+route.path_regex = re.compile('^/metrics(?P<path>.*)$')
+app.routes.append(route)
+
 
 # Endpoint pour réserver un book
 @app.post("/reserveBook")

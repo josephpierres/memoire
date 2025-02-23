@@ -3,7 +3,7 @@ interface ProxyInterface {
     RequestResponse:
         reserveBook(BookRequest)(BookResponse),
         getBooks(void)(undefined),
-        metrics(void)(MetricsResponse)
+        metrics(void)(undefined)
 }
 
 // ✅ Interface pour la gestion des alertes

@@ -10,17 +10,14 @@ rule_files:
 alerting:
   alertmanagers:
   - static_configs:
-    # - path_prefix: "/alertmanager/" #- scheme: http
     - targets:
       - alertmanager:9093 # URL du service Alertmanager
 
 scrape_configs:
 # The job name is added as a label `job=<job_name>` to any timeseries scraped from this config.
 - job_name: 'prometheus'
-
   # Override the global default and scrape targets from this job every 5 seconds.
   scrape_interval: 5s
-
   static_configs:
   # prometheus
   - targets: [ 'localhost:9090' ]
@@ -70,4 +67,4 @@ scrape_configs:
   static_configs:
   - targets: [ 'jolie-proxy:9191' ]
   metrics_path: /metrics
-  scrape_interval: 25s
+  scrape_interval: 1m

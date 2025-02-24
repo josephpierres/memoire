@@ -8,13 +8,8 @@ metadata:
 spec:
   selector:
     app: jolie-proxy
-  ports:
-  - protocol: TCP
-    port: 8090
-    targetPort: 8090
-    name: http
+  ports:  
   - protocol: TCP
     port: 9091
-    targetPort: 9091
-    name: metrics
+    targetPort: 9091   
   type: ClusterIP

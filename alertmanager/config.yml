@@ -9,5 +9,5 @@ route:
 receivers:
 - name: "jolie-webhook"
   webhook_configs:
-  - url: "http://jolie-proxy:9092/alert"
+  - url: "http://jolie-proxy:9091/alert"
     send_resolved: false

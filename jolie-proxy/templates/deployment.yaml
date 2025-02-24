@@ -19,22 +19,7 @@ spec:
       - name: regcred
       containers:
       - name: jolie-proxy
-        image: pjoseph5011/jolie-proxy:latest
+        image: pjoseph5011/kubescale_jolie_proxy:latest
         imagePullPolicy: Always
-        ports:
-        - name: http
-          containerPort: 8090
-        - name: metrics
-          containerPort: 9091
-        env:
-        - name: MYSQL_HOST
-          value: "mysql-service"
-        - name: REDIS_HOST
-          value: "redis"
-        volumeMounts:
-        - name: jolie-config
-          mountPath: /opt/jolie/config
-      volumes:
-      - name: jolie-config
-        configMap:
-          name: jolie-proxy-config
+        ports: 9091
+        

@@ -65,6 +65,6 @@ scrape_configs:
   # Scrape config pour l'application Flask exposant Prometheus
 - job_name: 'jolie'
   static_configs:
-  - targets: [ 'jolie-proxy:9191' ]
+  - targets: [ 'jolie-proxy:9091' ]
   metrics_path: /metrics
   scrape_interval: 1m

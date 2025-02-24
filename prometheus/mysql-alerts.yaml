@@ -12,7 +12,7 @@ spec:
     # 🔥 Alerte si MySQL est DOWN
     - alert: MySQL_Down
       expr: mysql_up == 0
-      for: 30s
+      for: 1s
       labels:
         severity: critical
       annotations:
@@ -22,7 +22,7 @@ spec:
     # ✅ Alerte si MySQL est UP
     - alert: MySQL_Up
       expr: mysql_up == 1
-      for: 30s
+      for: 1s
       labels:
         severity: info
       annotations:

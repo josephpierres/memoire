@@ -9,7 +9,7 @@ class DefaultConfig(object):
     WTF_CSRF_SECRET_KEY = SECRET_KEY
     # SERVER_NAME = 'localhost:8000'
     WTF_CSRF_ENABLED = False
-    Biblio_api_URL = "http://localhost:8084"
+    Biblio_api_URL = "http://localhost:5001"
 
 
 class ProductionConfig(DefaultConfig):

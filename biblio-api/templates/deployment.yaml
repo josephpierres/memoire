@@ -17,20 +17,15 @@ spec:
         - name: regcred
       containers:
       - name: biblio-api
-        image: pjoseph5011/biblio_api:latest      
-        imagePullPolicy: Always    #IfNotPresent
-        env:
-        - name: MYSQL_PORT
-          value: "3306"
-        - name: OTEL_PYTHON_LOG_CORRELATION
-          value: "true"
+        image: pjoseph5011/kubescale_api:latest      
+        imagePullPolicy: Always    #IfNotPresent        
         volumeMounts:
         - name: prometheus-dir
           mountPath: /tmp
         ports:
-        - containerPort: 8084
+        - containerPort: 5001
           name: metrics
-        command: ['python3', 'app.py']
+        command: ['python3', 'api.py']
       volumes:
       - name: prometheus-dir
         emptyDir: {}

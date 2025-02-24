@@ -7,9 +7,9 @@ spec:
   selector:
     app: biblio-api
   ports:
-  - port: 8084
+  - port: 5001
     protocol: TCP
     name: metrics
-    targetPort: 8084
+    targetPort: 5001
   # type: NodePort
   clusterIP: None

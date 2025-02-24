@@ -20,7 +20,7 @@ services:
     container_name: api
     command:     
       - 'python3'
-      - 'main.py'
+      - 'api.py'
     ports:
       - "5001:5001"
     depends_on:
@@ -41,12 +41,10 @@ services:
       - mysql
       
     environment:
-      - DATABASE_URL=mysql://root:password@mysql:3306/gestion_bibliotheque
-      
+      - DATABASE_URL=mysql://root:password@mysql:3306/gestion_bibliotheque      
     ports:
       - "9091:9091"
-      - "9191:9191"
-      - "9092:9092"
+            
     restart: always
     networks:
       - monitoring

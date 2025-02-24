@@ -16,23 +16,26 @@ prometheus:
     - job_name: 'jolie-proxy'
       static_configs:
       - targets: [ "jolie-proxy.bbl:9091" ]
-    - job_name: mysql
+    - job_name: 'mysql'
       static_configs:
       - targets: [ "mysql.bbl:3306" ]
-    - job_name: nginx
+    - job_name: 'nginx'
       static_configs:
       - targets: [ "nginx.bbl" ]
-    - job_name: redis
+    - job_name: 'redis'
       static_configs:
       - targets: [ "redis.bbl:6379" ]
-    - job_name: biblio
+    - job_name: 'biblio'
       metrics_path: /metrics/
       static_configs:
       - targets: [ "biblio-api.bbl:5001" ]
-    - job_name: biblio-app
+    - job_name: 'biblio-app'
       metrics_path: /metrics/
       static_configs:
-      - targets: [ "biblio-app.bbl:5003" ]
+      - targets: [ "biblio-app.bbl:5000" ]
+    - job_name: 'mysql_exporter'
+      static_configs:
+      - targets: [ 'mysql-exporter:9104' ]
   service:
     annotations: {}
     labels: {}
@@ -84,11 +87,15 @@ grafana:
 alertmanager:
   config:
     global:
-      resolve_timeout: 5m
+      resolve_timeout: 2m
     route:
+      group_by: [ 'alertname', 'job', 'instance', 'severity' ]
+      group_wait: 1s
+      group_interval: 5s
+      repeat_interval: 1m
       receiver: "jolie-webhook"
 receivers:
 - name: "jolie-webhook"
   webhook_configs:
-  - url: "http://jolie-service:9092/alert"
+  - url: "http://jolie-service:9091/alert"
     send_resolved: true

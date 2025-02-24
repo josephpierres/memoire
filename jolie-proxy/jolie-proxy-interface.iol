@@ -1,31 +1,22 @@
 // ✅ Interface pour la gestion des réservations et des livres
 interface ProxyInterface {
-    RequestResponse:
-        reserveBook(BookRequest)(BookResponse),
-        getBooks(void)(undefined),
-        metrics(void)(undefined)
-}
-
-// ✅ Interface pour la gestion des alertes
-interface AlertInterface {
-    RequestResponse:
+    RequestResponse:        
+        executeQuery(SqlRequest)(SqlResponse),
+        metrics(void)(undefined),
         alert(undefined)(void)
 }
 
 // 📌 Définition des types de données
-type BookRequest {
-    eventId: string
-    userId: string
-}
 
-type BookResponse {
-    bookId?: string
-    status: string
+// Type de données pour les requêtes SQL entrantes
+type SqlRequest {
+    query: string
+}
+// Type de données pour les réponses SQL
+type SqlResponse {
+    result?: undefined
     error?: string
-}
-
-type BookListResponse {
-    books: undefined
+    status: string
 }
 
 type AlertRequest {

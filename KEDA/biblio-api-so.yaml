@@ -14,10 +14,9 @@ spec:
     metricType: Value
     metadata:
       serverAddress: http://bibliobservability-kube-pr-prometheus.monitoring.svc.cluster.local:9090
-      metricName: biblio_api_requests_total
-      threshold: '7'
-      query: |
-        max(irate(biblio_api_responses_total{service="biblio-api"}[5m]))
+      metricName: jolie_backend_replica
+      threshold: '2' # 2 mysql est en ligne, 1 mysql est hors ligne 
+      query: jolie_backend_replica{instance="jolie-proxy:9092", job="jolie"}
       ignoreNullValues: 'false'
   minReplicaCount: 1
   maxReplicaCount: 3

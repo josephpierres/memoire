@@ -11,5 +11,5 @@ spec:
     protocol: TCP
     name: metrics
     targetPort: 5001
-  # type: NodePort
-  clusterIP: None
+  type: ClusterIP
+  

@@ -49,22 +49,21 @@ scrape_configs:
 # Scrape config pour biblio_app (Flask)
 - job_name: 'app_http'
   static_configs:
-  - targets: [ 'app:5002' ]
+  - targets: [ 'biblio-app:5002' ]
 
 # Scrape config pour l'application FastAPI
 - job_name: 'api'
   static_configs:
-  - targets: [ 'api:5001' ]
+  - targets: [ 'biblio-api:5001' ]
   metrics_path: /metrics
 
 # Scrape config pour l'application Flask exposant Prometheus
 - job_name: 'app_socket'
   static_configs:
-  - targets: [ 'app:5000' ]
+  - targets: [ 'biblio-app:5000' ]
   metrics_path: /metrics
   # Scrape config pour l'application Flask exposant Prometheus
 - job_name: 'jolie'
   static_configs:
-  - targets: [ 'jolie-proxy:9091' ]
+  - targets: [ 'jolie-proxy:9092' ]
   metrics_path: /metrics
-  scrape_interval: 1m

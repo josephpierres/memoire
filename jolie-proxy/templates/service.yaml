@@ -9,7 +9,10 @@ spec:
   selector:
     app: jolie-proxy
   ports:  
-  - protocol: TCP
+  - name: http
     port: 9091
-    targetPort: 9091   
+    targetPort: 9091
+  - name: metrics
+    port: 9092
+    targetPort: 9092    
   type: ClusterIP

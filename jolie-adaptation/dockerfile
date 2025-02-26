@@ -1,6 +1,0 @@
-FROM jolielang/jolie
-
-COPY AdaptationService.ol /app/AdaptationService.ol
-WORKDIR /app
-EXPOSE 8080
-CMD ["jolie", "AdaptationService.ol"]

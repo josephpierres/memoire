@@ -8,21 +8,27 @@
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
 </head>
 <body>
-
+<p><a href="/">Home</a></p>
     <div class="container">
         <h1>{{ title }}</h1>
+        {% for book in books %}
         <div>
-            <p><strong>ID:</strong> {{ livre.id }}</p>
-            <p><strong>Titre:</strong> {{ livre.titre }}</p>
-            <p><strong>Description:</strong> {{ livre.description }}</p>
-            <p><strong>ISBN:</strong> {{ livre.isbn }}</p>
-            <p><strong>Année d'apparition:</strong> {{ livre.annee_apparition }}</p>
-            <p><strong>Image:</strong> {{ livre.image }}</p>
-            <p><strong>Editeur:</strong> {{ livre.editeur.nom }}</p>
-            <p><strong>Auteur principal:</strong> {{ livre.auteurs[0].nom }}</p>
-            <p><strong>Categorie principale:</strong> {{ livre.categories[0].nom }}</p>
+            <p><strong>ID:</strong> {{ book.id }}</p>
+            <p><strong>Titre:</strong> {{ book.titre }}</p>
+            <p><strong>Description:</strong> {{ book.description }}</p>
+            <p><strong>ISBN:</strong> {{ book.isbn }}</p>
+            <p><strong>Année d'apparition:</strong> {{ book.annee_apparition }}</p>
+            <p><strong>Image:</strong> {{ book.image }}</p>  
+            <p><strong>Editeur:</strong> {{ book.editeur.nom  }}</p>          
+                {% for categorie in book.categories %}
+                <p><strong>Categories:</strong> {{ categorie.nom }}{% if not loop.last %}, {% endif %} </p>
+                {% endfor %}
             
+                {% for auteur in book.auteurs %}
+                <p><strong>Auteurs:</strong> {{ auteur.nom }}{% if not loop.last %}, {% endif %} </p>
+                {% endfor %}                     
         </div>
+        {% endfor %}
     </div>
 
 <!-- Inclure les fichiers Bootstrap JS -->

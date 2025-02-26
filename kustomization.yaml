@@ -21,7 +21,3 @@ resources:
 - pv-mysql.yaml
 - sc-app.yaml
 - pv-app.yaml
-
-# - EFK/elasticsearch_statefulset.yaml
-# - EFK/kibana.yaml
-# - EFK/fluentbit.yaml

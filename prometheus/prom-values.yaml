@@ -15,7 +15,8 @@ prometheus:
     additionalScrapeConfigs:
     - job_name: 'jolie-proxy'
       static_configs:
-      - targets: [ "jolie-proxy.bbl:9091" ]
+      - targets: [ "jolie-proxy.bbl:9092" ]
+      metrics_path: /metrics/
     - job_name: 'mysql'
       static_configs:
       - targets: [ "mysql.bbl:3306" ]

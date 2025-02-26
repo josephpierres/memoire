@@ -252,11 +252,11 @@ service JolieProxy {
                 }
             )
             with( connectionInfo ) {
-                .username = "root";
-                .port = 3306;
-                .password = "password";
-                .host = "mysql";
-                .database = "gestion_bibliotheque"; 
+                .username = MYSQL_USER;
+                .port = int(MYSQL_PORT);
+                .password = MYSQL_PASSWORD;
+                .host = MYSQL_HOST;
+                .database = MYSQL_DB; 
                 .driver = "mysql"
                 .checkConnection = 1;
                 .toLowerCase = true
@@ -288,12 +288,20 @@ service JolieProxy {
             createBooksDatabase
             global.hsqldbAvailable = true
         }
-    }
-        
+    }    
                 
 
 
     // ✅ Exposition des métriques pour Prometheus
+    // Prometheus exige le format raw pour les métriques
+    // ce qui explique la création d'une interface dédiée
+    inputPort MetricsPort {
+        location: "socket://0.0.0.0:9092/metrics"
+        protocol: http {
+            format = "raw"
+        }
+        Interfaces: MetricsInterface
+    }
     // ✅ Réception des alertes Prometheus via Alertmanager
     // ✅ Proxy API pour FastAPI
     inputPort ProxyPort {
@@ -310,7 +318,12 @@ service JolieProxy {
         // 🔍 Variable globale pour suivre l'état des bases de données
         global.mysqlAvailable = true
         global.hsqldbAvailable = true
-        getenv@Runtime( "HOSTNAME" )( HOSTNAME )
+        
+        getenv@Runtime( "MYSQL_HOST" )( MYSQL_HOST )        
+        getenv@Runtime( "MYSQL_PORT" )( MYSQL_PORT )
+        getenv@Runtime( "MYSQL_USER" )( MYSQL_USER )
+        getenv@Runtime( "MYSQL_PASSWORD" )( MYSQL_PASSWORD )
+        getenv@Runtime( "MYSQL_DB" )( MYSQL_DB )
 
         initializeMySQLConnection
         if(!global.mysqlAvailable) {
@@ -345,11 +358,11 @@ service JolieProxy {
 
         [ executeQuery(request)(response) {
             scope (dbQueryScope) {
-                install(SQLException => {
-                    response.error = "Erreur SQL : " + SQLException;
-                    response.status = "ERROR";
-                    println@Console("❌ Erreur SQL : " + SQLException)()
-                });
+            //     install(SQLException => {
+            //         response.error = "Erreur SQL : " + SQLException;
+            //         response.status = "ERROR";
+            //         println@Console("❌ Erreur SQL : " + SQLException)()
+            //     });
 
                 println@Console("🔎 Exécution requête SQL: " + request.query)();
                 query@Database(request.query)(dbResponse);

@@ -19,7 +19,7 @@ spec:
         - name: regcred
       containers:
       - name: biblio-app       
-        image: pjoseph5011/biblio_app:latest
+        image: pjoseph5011/kubescale_app:latest
         imagePullPolicy: Always #IfNotPresent
         volumeMounts:
         - name: app-config
@@ -30,7 +30,7 @@ spec:
         ports:
         - containerPort: 8081
           name: metrics
-        - containerPort: 8083
+        - containerPort: 5000
           name: http
         env:
         - name: FLASK_ENV
@@ -40,7 +40,7 @@ spec:
         - name: REDIS_URL
           value: "redis://redis:6379/0" 
         - name: Biblio_api_URL
-          value: "http://biblio-api:8084"       
+          value: "http://biblio-api:5001"       
       volumes:
       # - name: www-storage
       #   persistentVolumeClaim:

@@ -19,7 +19,26 @@ spec:
       - name: regcred
       containers:
       - name: jolie-proxy
-        image: pjoseph5011/kubescale_jolie_proxy:latest
+        image: pjoseph5011/kubescale_jolie-proxy:latest
         imagePullPolicy: Always
-        ports: 9091
+        ports: 
+        - containerPort: 9091
+          name: http
+        - containerPort: 9092
+          name: metrics
+        env:
+        - name: MYSQL_HOST
+          value: "mysql.bbl.svc.cluster.local"
+        - name: MYSQL_USER
+          value: "root"
+        - name: MYSQL_PASSWORD
+          value: "password"
+        - name: MYSQL_DB
+          value: "gestion_bibliotheque" 
+        - name: MySQL_PORT
+          value: "3306"       
+        - name: ALERTMANAGER_URL
+          value: "http://alertmanager.monitoring.svc.cluster:9093"
+        - name: PROMETHEUS_URL
+          value: "http://prometheus.monitoring.svc.cluster:9090"
         

@@ -6,6 +6,11 @@ interface ProxyInterface {
         alert(undefined)(void)
 }
 
+interface MetricsInterface {
+    RequestResponse:      
+        metrics(void)(undefined)        
+}
+
 // 📌 Définition des types de données
 
 // Type de données pour les requêtes SQL entrantes

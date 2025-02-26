@@ -73,7 +73,7 @@ except Exception as e:
 
 # Initialize CSRF protection, database, and Redis
 # csrf = CSRFProtect(app)
-redis_client = FlaskRedis(app)
+# redis_client = FlaskRedis(app)
 
 # Instrument tracing
 tracer = TracesInstrumentor(app=app, service_name=service_name, otlp_endpoint="tempo:4317", excluded_urls="/metrics")
@@ -96,8 +96,8 @@ def index():
             # Start the timer
             # time.sleep(randint(1,10))
             current_time = datetime.now().strftime("%d-%m-%Y")
-            redis_client.set('flask_key', current_time)
-            value = redis_client.get('flask_key').decode('utf-8')             
+            # redis_client.set('flask_key', current_time)
+            # value = redis_client.get('flask_key').decode('utf-8')             
             # Logging the event
             logger.info(f"Page d'accueil chargée avec la date {current_time}")        
             # Calculate request duration and record it
@@ -105,7 +105,7 @@ def index():
             INFO.labels(method='index()', endpoint='/').inc()  
             INFO.labels(method='index()', endpoint='/').dec(10)    # Decrement by given value
             INFO.labels(method='index()', endpoint='/').set(4.2)   #     
-            return render_template('index.html', date_du_jour=value)
+            return render_template('index.html', date_du_jour = current_time)
         except Exception as e:
             logger.error(f"Erreur lors de l'accès à la page d'accueil : {str(e)}")
             return jsonify({"error": "Erreur interne du serveur"}), 500
@@ -161,7 +161,8 @@ def get_book_by_id(book_id):
                 function_name = inspect.currentframe().f_code.co_name
                 logger.info(
                 "Récupérer un livre par ID avec succès dans la fonction %s de l'application %s",  function_name, service_name)
-                return render_template('book_by_id.html', title='Livre', livre = livre)
+                print(json.dumps(livre, indent=4, ensure_ascii=False))
+                return render_template('book_by_id.html', title='Livre', books = livre)
             else:
                 logger.error(f"Erreur lors de la récupération du livre ID {book_id}: {response.status_code}")
                 return jsonify({"error": f"Livre non trouvé avec l'ID {book_id}"}), 404
